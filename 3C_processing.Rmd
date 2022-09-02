@@ -1,0 +1,743 @@
+---
+title: "3C_processing"
+author: "3C Team"
+date: "2/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Packages
+library("ggpubr")
+library(psych)
+library(tidyverse)
+library(scales)
+library(jtools)
+library(Hmisc)
+library(dplyr)
+```
+
+# Processing. 
+
+## Load and Cleanup Data
+
+```{r}
+df <- read.csv("3C_Live_Study_Data.csv", header=T, na.strings="")
+
+#444 total rows, 442 total participants 
+
+## Drop unneeded rows (pilot data, incomplete trials, remove entries that are shorter than 6 mins longer than 45 minutes) & cols
+unneeded_cols <- c("X", "StartDate", "EndDate", "Status", "Progress", "Finished", "RecordedDate", "ResponseId", "RecipientLastName", "RecipientFirstName", "RecipientEmail", "ExternalReference", "DistributionChannel", "UserLanguage", "Gender_4_TEXT...Parent.Topics", "Gender_4_TEXT...Sentiment.Polarity", "Gender_4_TEXT...Sentiment.Score", "Gender_4_TEXT...Sentiment", "Gender_4_TEXT...Topics", "Gender_4_TEXT...Topic.Sentiment.Label", "Gender_4_TEXT...Topic.Sentiment.Score")
+
+# Return entries where duration was longer than 45 min.
+df$'Duration..in.seconds.' = as.numeric(as.character(df$'Duration..in.seconds.'))
+df[which(df$'Duration..in.seconds.' >= 45*60), ]  
+
+# 4 entries, 394, 410, 415, and 444. 410 = 31 seconds over limit, so not going to exclude. 
+
+# return entries where duration was shorter than 6 mins.
+df$'Duration..in.seconds.' = as.numeric(as.character(df$'Duration..in.seconds.'))
+df[which(df$'Duration..in.seconds.' <= 360), ]   # 29 entries, 8,9,10, 11, 12, 14, 22, 205, 222, 255, 324, 416, 417, 418, 419, 420, 421, 423, 424, 426, 429, 432, 433, 434, 436, 439, 443
+
+# remove Gender and Race open response columns to be able to remove rows with missing values
+NAcols <- c("Gender_4_TEXT", "Race_6_TEXT")
+
+df <- df[ , !names(df) %in% unneeded_cols]
+df <- df[ , !names(df) %in% NAcols]
+
+
+
+# Exclude folks who took longer than 45 mins or were shorter than 6 mins and un-needed columns
+
+#exclude remaining folks progress less than 100 percent 
+df[which(df$Progress < 100), ]
+
+# Remove all the folks who meet the criteria stated above 
+#df <- df[-c(1,2,8:12,14,22,23,118,176,191,205,222,255,243,252,270,323,324,331,350,364,392,394,415:444,423,424,426,426,429,432:434,436,439,443,444), ]
+df <- df[-c(1,2,8:12,14,22,205,222,255,324,394,415:421,422,423,424,425,426,429,432:434,436,439,443,444), ]
+
+
+#410 participants are now left out of the original 442
+
+
+```
+
+## Creating COVID19 DoG Index 
+
+```{r}
+# Andrew/Kate decided placement should be above removing NAs, not working in reverse order Add columns with time frames in days
+# saving both response in set of units (days-years), (.2_x) AND numbers (0-30), (.1_x)
+dog1 <- list("COVID_DoG_Questions.1", df$COVID_DoG_Questions.2_1, df$COVID_DoG_Questions.1_1)
+dog2 <- list("COVID_DoG_Questions.2", df$COVID_DoG_Questions.2_2, df$COVID_DoG_Questions.1_2)
+dog3 <- list("COVID_DoG_Questions.3", df$COVID_DoG_Questions.2_3, df$COVID_DoG_Questions.1_3)
+dog4 <- list("COVID_DoG_Questions.4", df$COVID_DoG_Questions.2_4, df$COVID_DoG_Questions.1_4)
+dog5 <- list("COVID_DoG_Questions.5", df$COVID_DoG_Questions.2_5, df$COVID_DoG_Questions.1_5)
+dog6 <- list("COVID_DoG_Questions.6", df$COVID_DoG_Questions.2_6, df$COVID_DoG_Questions.1_6)
+
+# saving both response in set of units (days-years), (.1_x) AND numbers (0-30), (.2_x)
+pandemic_len <- list("PandemicLengthExpect.1", df$PandemicLengthExpect.1_1, df$PandemicLengthExpect.2_1)
+
+## create function called create_columns that takes in UNITS and NUMBERS
+# depending on units, multiplies NUMBERS by correct converstion to have units ALL in days
+# e.g. 2 = weeks, so NUMBER (len_col) x 7 = days 
+# fixed from (units_col, 1, 1) to (units_col, 1, 2) because NUMBERS that were more than 1 digit (e.g. 11, 13) were being cut off 
+# so 11 months was being converted to 30 days not 330 days
+create_columns <- function(units_col, len_col) {
+  case_when(as.numeric(substring(units_col, 1, 2)) == 1 ~ as.numeric(substring(len_col, 1, 2)) * 1,
+            as.numeric(substring(units_col, 1, 2)) == 2 ~ as.numeric(substring(len_col, 1, 2)) * 7,
+            as.numeric(substring(units_col, 1, 2)) == 3 ~ as.numeric(substring(len_col, 1, 2)) * 30,
+            as.numeric(substring(units_col, 1, 2)) == 4 ~ as.numeric(substring(len_col, 1, 2)) * 365)
+}
+
+## work to debug create_columns function
+# test each of the functions in create_columns
+#units_col = 12
+#units <- substring(units_col, 1, 1)
+#units
+# prints out 1 when should print out 12
+# function not taking the entire number (13)
+#solution: change as.numeric(substring((units_col, 1, 1)) to (units_col, 1, 2)))
+
+# loop through 6 categories saved above and apply function
+# A NOTE: I added the dplyr function before mutate because when you load in packages that include the mutate function, it overwrites the function in dplyr and the new columns won't show up in the df dataframe, THUS specifiying the mutate function from the dplyr package 
+df <- df %>% dplyr::mutate(!!dog1[[1]] := create_columns(dog1[[2]], dog1[[3]]),
+              !!dog2[[1]] := create_columns(dog2[[2]], dog2[[3]]),
+              !!dog3[[1]] := create_columns(dog3[[2]], dog3[[3]]),
+              !!dog4[[1]] := create_columns(dog4[[2]], dog4[[3]]),
+              !!dog5[[1]] := create_columns(dog5[[2]], dog5[[3]]),
+              !!dog6[[1]] := create_columns(dog6[[2]], dog6[[3]]),
+              !!pandemic_len[[1]] := create_columns(pandemic_len[[2]], pandemic_len[[3]]),
+              .before = SocialNorms_Family_1
+              )
+view(df)
+
+#checks: are lengths the same?
+#length(pandemic_len[[2]])
+#length(pandemic_len[[3]])
+#df %>% select(PandemicLengthExpect.1_1, PandemicLengthExpect.2_1, PandemicLengthExpect.1)
+
+#view(df)
+```
+
+## Remove missing values and convert classes
+
+```{r}
+#check where the missing values are
+#rowSums(is.na(df))
+
+#remove missing values
+##show where missing values are
+df[!complete.cases(df), ]   #6 entries
+##create new dataset with no missing values
+omit_df <- na.omit(df)
+nrow(omit_df) #393
+#view(omit_df)
+sum(is.na(omit_df))
+
+# recode value in Age variable that participant entered their birth year (1971) instead of their age
+omit_df[omit_df == 1971] <- 50
+
+#convert character values (except Nationality and Occupation) to numeric to be able to calculate stats
+numeric_cols1 <- names(omit_df)[3:206] #ends on Race 
+numeric_cols2 <- names(omit_df)[208] #education
+numeric_cols3 <- names(omit_df)[210:224] #begins on Measure2_2 to end of columns
+
+#view(omit_df)
+
+omit_df[numeric_cols1] <- lapply(omit_df[numeric_cols1], as.numeric)
+omit_df[numeric_cols2] <- lapply(omit_df[numeric_cols2], as.numeric)
+omit_df[numeric_cols3] <- lapply(omit_df[numeric_cols3], as.numeric)
+
+sapply(omit_df, class) # all numeric!
+
+#view(omit_df)
+
+#check that everyone included in omit_df passed both attention checks
+omit_df$attentioncheck_1 #all 4s
+omit_df$attentioncheck_2 #all 3s
+
+#create id for each participant
+
+omit_df <- tibble::rowid_to_column(omit_df, "id")
+omit_df
+
+```
+
+## COVID DoG and Pandemic Expextation Processing 
+
+```{r}
+# make index of delaying across all 6 questions (average delaying across categories)
+mini_df <- omit_df %>% select(COVID_DoG_Questions.1:COVID_DoG_Questions.6)
+omit_df <- omit_df %>% mutate(COVID_DoG_index = rowMeans(mini_df), 
+                              .before = PandemicLengthExpect.1)
+
+#create 1 index across social situations/gatherings
+mini_df <- omit_df %>% select(COVID_DoG_Questions.1:COVID_DoG_Questions.3)
+omit_df <- omit_df %>% mutate(socialgatherings_index = rowMeans(mini_df),
+                              .before = PandemicLengthExpect.1)
+#create 1 index across traveling
+mini_df <- omit_df %>% select(COVID_DoG_Questions.4:COVID_DoG_Questions.6)
+omit_df <- omit_df %>% mutate(traveling_index = rowMeans(mini_df), 
+                              .before = PandemicLengthExpect.1)
+
+#view(omit_df)
+
+```
+
+## automatic outlier work 
+
+```{r}
+#What does the COVID DoG distribution look like?
+
+#plot
+hist(omit_df$COVID_DoG_index)
+
+#let's make a dataframe without the outliers in case this is helpful for future analyses. 
+
+#find Q1, Q3, and interquartile range for values in column A
+Q1 <- quantile(omit_df$COVID_DoG_index, .25)
+Q3 <- quantile(omit_df$COVID_DoG_index, .75)
+IQR <- IQR(omit_df$COVID_DoG_index)
+
+#only keep rows in dataframe that have values within 1.5*IQR of Q1 and Q3. Here is the dataframe without the outliers: 
+
+no_outliers <- subset(omit_df, omit_df$COVID_DoG_index > (Q1 - 1.5*IQR) & omit_df$COVID_DoG_index < (Q3 + 1.5*IQR))
+
+```
+ 
+## Pandemic Expextation , activate if doing Pandemic Expextation work
+```{r}
+
+#find Q1, Q3, and interquartile range for values in column A
+#Q1 <- quantile(omit_df$PandemicLengthExpect.1, .25)
+#Q3 <- quantile(omit_df$PandemicLengthExpect.1, .75)
+#IQR <- IQR(omit_df$PandemicLengthExpect.1)
+
+#only keep rows in dataframe that have values within 1.5*IQR of Q1 and Q3
+#no_outliers <- subset(omit_df, omit_df$PandemicLengthExpect.1 > (Q1 - 1.5*IQR) & omit_df$PandemicLengthExpect.1 < (Q3 + 1.5*IQR))
+
+#omit_df <- no_outliers 
+
+```
+
+## Normalize COVID DoG and Pandemic Length Expextation Data 
+
+```{r}
+
+# Plot for COVID DoG index vs outlier free data (average delaying across 6 scenarios for each participant)
+summary(omit_df$COVID_DoG_index)
+hist(omit_df$COVID_DoG_index)
+
+# Plot for COVID DoG index, between the two indices
+
+summary(omit_df$socialgatherings_index)
+hist(omit_df$socialgatherings_index)
+
+summary(omit_df$traveling_index)
+hist(omit_df$traveling_index)
+
+
+# Plot for Pandemic Length Expectation (average pandemic length expectation for each participant)
+summary(omit_df$PandemicLengthExpect.1)
+hist(omit_df$PandemicLengthExpect.1)
+
+# Log transformation of COVID DoG Index 
+
+omit_df$logCOVID_DoG_index=log(omit_df$COVID_DoG_index)
+
+summary(omit_df$logCOVID_DoG_index)
+hist(omit_df$logCOVID_DoG_index)
+
+#a lot of the data is centered around a couple bars, what does it look like if we make more bars?
+
+hist(omit_df$logCOVID_DoG_index, breaks = 50)
+
+# Log transformation of Social Gatherings Index
+
+omit_df$logsocialgatherings_index=log(omit_df$socialgatherings_index)
+
+summary(omit_df$logsocialgatherings_index)
+hist(omit_df$logsocialgatherings_index)
+
+# Log transformation of Traveling Index 
+
+omit_df$logtraveling_index=log(omit_df$traveling_index)
+
+summary(omit_df$logtraveling_index)
+hist(omit_df$logtraveling_index)
+
+# Log transformation of Pandemic Length Expextation
+
+omit_df$logPandemicLengthExpect.1=log(omit_df$PandemicLengthExpect.1)
+
+summary(omit_df$logPandemicLengthExpect.1) 
+
+hist(omit_df$logPandemicLengthExpect.1) 
+
+#a lot of the data is centered around a couple bars, what does it look like if we make more bars?
+
+hist(omit_df$logPandemicLengthExpect.1, breaks = 50) 
+
+#Are things normally distrubuted now?
+
+#okay, how do things like when we use the transformed indicies? Go down to line 629
+
+```
+
+## Remaining Task Indicies 
+
+### MCQ indices
+
+```{r}
+#Create MCQ DF
+MCQdata <- data.frame(omit_df$MCQ_1, omit_df$MCQ_2, omit_df$MCQ_3, omit_df$MCQ_4, omit_df$MCQ_5, omit_df$MCQ_6, omit_df$MCQ_7, omit_df$MCQ_8, omit_df$MCQ_9, omit_df$MCQ_10, omit_df$MCQ_11, omit_df$MCQ_12, omit_df$MCQ_13, omit_df$MCQ_13, omit_df$MCQ_14, omit_df$MCQ_15, omit_df$MCQ_16, omit_df$MCQ_17, omit_df$MCQ_18, omit_df$MCQ_19, omit_df$MCQ_20, omit_df$MCQ_21, omit_df$MCQ_22, omit_df$MCQ_23, omit_df$MCQ_24, omit_df$MCQ_25, omit_df$MCQ_26, omit_df$MCQ_27)
+
+# load lookup tables
+lookup1 <- read.table("lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("lookup3MCQ.txt", header = TRUE)
+
+#Calculate unique value for each sequence of responses
+MCQdata$omit_df.MCQ_13 <- MCQdata$omit_df.MCQ_13*1
+MCQdata$omit_df.MCQ_20 <- MCQdata$omit_df.MCQ_20*2
+MCQdata$omit_df.MCQ_26 <- MCQdata$omit_df.MCQ_26*4
+MCQdata$omit_df.MCQ_22 <- MCQdata$omit_df.MCQ_22*8
+MCQdata$omit_df.MCQ_3 <- MCQdata$omit_df.MCQ_3*16
+MCQdata$omit_df.MCQ_18 <- MCQdata$omit_df.MCQ_18*32
+MCQdata$omit_df.MCQ_5 <- MCQdata$omit_df.MCQ_5*64
+MCQdata$omit_df.MCQ_7 <- MCQdata$omit_df.MCQ_7*128
+MCQdata$omit_df.MCQ_11 <- MCQdata$omit_df.MCQ_11*256
+MCQdata$SmlSeq <- with (MCQdata, omit_df.MCQ_13+omit_df.MCQ_20+omit_df.MCQ_26+omit_df.MCQ_22+omit_df.MCQ_3+omit_df.MCQ_18+omit_df.MCQ_5+omit_df.MCQ_7+omit_df.MCQ_11-510)
+
+MCQdata$omit_df.MCQ_1 <- MCQdata$omit_df.MCQ_1*1
+MCQdata$omit_df.MCQ_6 <- MCQdata$omit_df.MCQ_6*2
+MCQdata$omit_df.MCQ_24 <- MCQdata$omit_df.MCQ_24*4
+MCQdata$omit_df.MCQ_16 <- MCQdata$omit_df.MCQ_16*8
+MCQdata$omit_df.MCQ_10 <- MCQdata$omit_df.MCQ_10*16
+MCQdata$omit_df.MCQ_21 <- MCQdata$omit_df.MCQ_21*32
+MCQdata$omit_df.MCQ_14 <- MCQdata$omit_df.MCQ_14*64
+MCQdata$omit_df.MCQ_8 <- MCQdata$omit_df.MCQ_8*128
+MCQdata$omit_df.MCQ_27 <- MCQdata$omit_df.MCQ_27*256
+MCQdata$MedSeq <- with (MCQdata, omit_df.MCQ_1+omit_df.MCQ_6+omit_df.MCQ_24+omit_df.MCQ_16+omit_df.MCQ_10+omit_df.MCQ_21+omit_df.MCQ_14+omit_df.MCQ_8+omit_df.MCQ_27-510)
+
+MCQdata$omit_df.MCQ_9 <- MCQdata$omit_df.MCQ_9*1
+MCQdata$omit_df.MCQ_17 <- MCQdata$omit_df.MCQ_17*2
+MCQdata$omit_df.MCQ_12 <- MCQdata$omit_df.MCQ_12*4
+MCQdata$omit_df.MCQ_15 <- MCQdata$omit_df.MCQ_15*8
+MCQdata$omit_df.MCQ_2 <- MCQdata$omit_df.MCQ_2*16
+MCQdata$omit_df.MCQ_25 <- MCQdata$omit_df.MCQ_25*32
+MCQdata$omit_df.MCQ_23 <- MCQdata$omit_df.MCQ_23*64
+MCQdata$omit_df.MCQ_19 <- MCQdata$omit_df.MCQ_19*128
+MCQdata$omit_df.MCQ_4 <- MCQdata$omit_df.MCQ_4*256
+MCQdata$LrgSeq <- with (MCQdata, omit_df.MCQ_9+omit_df.MCQ_17+omit_df.MCQ_12+omit_df.MCQ_15+omit_df.MCQ_2+omit_df.MCQ_25+omit_df.MCQ_23+omit_df.MCQ_19+omit_df.MCQ_4-510)
+
+#Remove unwanted columns
+MCQdata[1:28] <- list(NULL)
+
+#Maintain row order
+MCQdata$id <- 1:nrow(MCQdata)
+
+#Merge in MCQindices from lookup table
+MCQdata <- (merge(lookup1, MCQdata, by = 'SmlSeq'))
+MCQdata <- (merge(lookup2, MCQdata, by = 'MedSeq'))
+MCQdata <- (merge(lookup3, MCQdata, by = 'LrgSeq'))
+
+#Return to the original order of rows
+MCQdata <- MCQdata[order(MCQdata$id),]
+head(MCQdata)
+
+#Arrange columns in ideal order
+MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
+
+#add MCQ to omit_df
+
+omit_df <- omit_df %>%
+  add_column(SmlK = MCQdata$SmlK,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df%>%
+  add_column(MedK = MCQdata$MedK,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df %>%
+  add_column(LrgK = MCQdata$LrgK,
+             .after = "MCQ_27") 
+
+mini_df <- omit_df %>% select(LrgK, MedK, SmlK)
+omit_df <- omit_df %>% mutate(MeanK = rowMeans(mini_df),
+                              .before = MCQ_27)
+
+#add ICR to omit_df
+
+omit_df <- omit_df %>%
+  add_column(SmlICR = MCQdata$SmlICR,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df%>%
+  add_column(MedICR = MCQdata$MedICR,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df %>%
+  add_column(LrgICR = MCQdata$LrgICR,
+             .after = "MCQ_27") 
+
+mini_df <- omit_df %>% select(LrgICR, MedICR, SmlICR)
+omit_df <- omit_df %>% mutate(MeanICR = rowMeans(mini_df),
+                              .before = MCQ_27)
+
+# add cons to omit_df
+
+omit_df <- omit_df %>%
+  add_column(SmlCons = MCQdata$SmlCons,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df%>%
+  add_column(MedCons = MCQdata$MedCons,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df %>%
+  add_column(LrgCons = MCQdata$LrgCons,
+             .after = "MCQ_27") 
+
+#what are the cons scores looking like?
+
+histogram(omit_df$SmlCons)
+histogram(omit_df$MedCons)
+histogram(omit_df$LrgCons)
+
+#Let's remove any of the values that are below .80 cons score across the values
+
+omit_df[omit_df$SmlCons < .8,]
+omit_df[omit_df$MedCons < .8,]
+omit_df[omit_df$LrgCons < .8,]
+
+
+#new low cons scores == 11, 16, 23, 68, 71 86, 108, 178, 249 250
+
+omit_df <- omit_df[!(omit_df$id=="11" | omit_df$id=="68"| omit_df$id=="86" | omit_df$id=="108" | omit_df$id=="250" | omit_df$id=="16" | omit_df$id=="23" | omit_df$id=="71" | omit_df$id=="178" | omit_df$id=="249"),]
+
+```
+
+### Normalizing MCQ indicies 
+
+```{r}
+#Let's look at the distribution of the K indices 
+
+summary(omit_df$SmlK)
+summary(omit_df$MedK)
+summary(omit_df$LrgK)
+summary(omit_df$MeanK)
+
+hist(omit_df$SmlK)
+hist(omit_df$MedK)
+hist(omit_df$LrgK)
+hist(omit_df$MeanK)
+
+#We have some skewing, lets see what a log transformation does. 
+
+omit_df$logSmlK=log(omit_df$SmlK)
+omit_df$logMedK=log(omit_df$MedK)
+omit_df$logLrgK=log(omit_df$LrgK)
+omit_df$logMeanK=log(omit_df$MeanK)
+
+
+summary(omit_df$logSmlK)
+summary(omit_df$logMedK)
+summary(omit_df$logLrgK)
+summary(omit_df$logMeanK)
+
+
+hist(omit_df$logSmlK)
+hist(omit_df$logMedK)
+hist(omit_df$logLrgK)
+hist(omit_df$logMeanK)
+
+
+#looks better! Let's add to the data frame 
+
+omit_df <- omit_df%>%
+  add_column(logSmlK = MCQdata$logSmlK,
+             .after = "MCQ_27") 
+
+
+omit_df <- omit_df%>%
+  add_column(logMedK = MCQdata$logMedK,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df%>%
+  add_column(logLrgK = MCQdata$logLrgK,
+             .after = "MCQ_27") 
+
+omit_df <- omit_df%>%
+  add_column(logMeanK = omit_df$logMeanK,
+             .after = "MCQ_27") 
+
+```
+
+### Perceived COVID DoG Risk and Value (inactive)
+
+```{r}
+#mini_df <- omit_df %>% select(PerceivedRisk_1:PerceivedRisk_6)
+#omit_df <- omit_df %>% mutate(Perceived_Risk_Sum = rowSums(mini_df), 
+                              #.before = PerceivedValue_1)
+#omit_df <- omit_df %>% mutate(PerceivedRisk_index = rowMeans(mini_df),
+                             # .before = PerceivedValue_1)
+
+#mini_df <- omit_df %>% select(PerceivedValue_1:PerceivedValue_6)
+#omit_df <- omit_df %>% mutate(Perceived_Value_Sum = rowSums(mini_df),
+                              #.before = GCS_1)
+#omit_df <- omit_df %>% mutate(PercevedValue_index = rowMeans(mini_df), 
+                              #.before = GCS_1)
+
+```
+
+### Social Norms (Mean)
+
+```{r}
+
+# Social Norm Index across three factors   
+
+mini_df <- omit_df %>% select(SocialNorms_Family_1:SocialNorms_Stranger_3)
+omit_df <- omit_df %>% mutate(Norms_index = rowMeans(mini_df),
+                              .before = PerceivedRisk_1)
+#family norms index
+
+mini_df <- omit_df %>% select(SocialNorms_Family_1:SocialNorms_Family_3)
+omit_df <- omit_df %>% mutate(FamilyNorm_index = rowMeans(mini_df), 
+                              .before = PerceivedRisk_1)
+
+#friends norm index
+
+mini_df <- omit_df %>% select(SocialNorms_Friends_1:SocialNorms_Friends_3)
+omit_df <- omit_df %>% mutate(FriendsNorm_index = rowMeans(mini_df), 
+                              .before = PerceivedRisk_1)
+
+#strangers norm index
+mini_df <- omit_df %>% select(SocialNorms_Stranger_1:SocialNorms_Stranger_3)
+omit_df <- omit_df %>% mutate(StrangerNorm_index = rowMeans(mini_df), 
+                              .before = PerceivedRisk_1)
+
+```
+
+### General Confidence (sum score)
+
+```{r}
+
+#re-coding reverse coded variables
+mini_df <- omit_df %>% select(GCS_1)
+omit_df <- omit_df %>% mutate(GCS_1 = 7 - GCS_1)
+
+mini_df <- omit_df %>% select(GCS_2)
+omit_df <- omit_df %>% mutate(GCS_2 = 7 - GCS_2)
+
+mini_df <- omit_df %>% select(GCS_3)
+omit_df <- omit_df %>% mutate(GCS_3 = 7 - GCS_3)
+
+mini_df <- omit_df %>% select(GCS_4)
+omit_df <- omit_df %>% mutate(GCS_4 = 7 - GCS_4)
+
+mini_df <- omit_df %>% select(GCS_6)
+omit_df <- omit_df %>% mutate(GCS_6 = 7 - GCS_6)
+
+
+
+mini_df <- omit_df %>% select(contains("GCS"))
+omit_df <- omit_df %>% mutate(GCS_index = rowMeans(mini_df),
+                              .before = IUS_1)
+
+```
+
+### Intolerance of Uncertainty (sum score, 3 indices)
+
+```{r}
+mini_df <- omit_df %>% select(IUS_1:IUS_12)
+omit_df <- omit_df %>% mutate(IUS_Sum = rowSums(mini_df), 
+                              .before = MFQpart1_1)
+
+mini_df <- omit_df %>% select(IUS_1:IUS_7)
+omit_df <- omit_df %>% mutate(IUS_ProspectiveAnexity_index = rowSums(mini_df),
+                              .before = MFQpart1_1)
+
+mini_df <- omit_df %>% select(IUS_8:IUS_12)
+omit_df <- omit_df %>% mutate(IUS_inhibitory_anexity_index = rowSums(mini_df),
+                              .before = MFQpart1_1)
+
+```
+
+### Political Orientation ( Measure 2 with means for each predictor, Measure 5 with means across the two factors)
+```{r}
+# measure 2 indices
+mini_df <- omit_df %>% select(Measure2_2)
+omit_df <- omit_df %>% mutate(Measure2_liberal_Index = rowMeans(mini_df), 
+                              .before = Measure5_1)
+mini_df <- omit_df %>% select(Measure2_3)
+omit_df <- omit_df %>% mutate(Measure2_cons_Index = rowMeans(mini_df), 
+                              .before = Measure5_1)
+mini_df <- omit_df %>% select(Measure2_4)
+omit_df <- omit_df %>% mutate(Measure2_liberterian_Index = rowMeans(mini_df), 
+                              .before = Measure5_1)
+
+# measure 5 indices (inactive)
+
+#re-coding reverse coded variables
+#mini_df <- omit_df %>% select(Measure5_1, Measure5_7)
+#omit_df <- omit_df %>% mutate(Measure5_1 = 100 - Measure5_1)
+#omit_df <- omit_df %>% mutate(Measure5_7 = 100 - Measure5_7)
+
+#indice across both scales
+
+#mini_df <- omit_df %>% select(Measure5_1:Measure5_14)
+#omit_df <- omit_df %>% mutate(Measure5_SECS_Index = rowMeans(mini_df), 
+                            #  .before = logCOVID_DoG_index)
+#social indice
+
+#mini_df <- omit_df %>% select(Measure5_1,Measure5_5, Measure5_6, Measure5_9, Measure5_10, Measure5_13, Measure5_14)
+#omit_df <- omit_df %>% mutate(Measure5_Social_Index = rowMeans(mini_df), 
+                             # .before = logCOVID_DoG_index)
+
+#political indice
+
+#mini_df <- omit_df %>% select(Measure5_4, Measure5_7, Measure5_8, Measure5_11, Measure5_12)
+#omit_df <- omit_df %>% mutate(Measure5_Political_Index = rowMeans(mini_df), 
+                          #    .before = logCOVID_DoG_index)
+
+```
+
+### MFQ (5 Factor Index)
+```{r}
+
+#harm foundation MFQpart1_1,MFQpart1_7, MFQpart1_12, MFQpart2_1, MFQpart2_7, MFQpart2_12
+
+mini_df <- omit_df %>% select(MFQpart1_1,MFQpart1_7, MFQpart1_12, MFQ_part2_1, MFQ_part2_7, MFQ_part2_12)
+omit_df <- omit_df %>% mutate(harm_foundation = rowMeans(mini_df), 
+                              .before = Disgust_1)
+
+#fairness foundation MFQpart1_2, MFQpart1_8, MFQpart1_13, MFQpart2_2, MFQpart2_8, MFQpart2_13
+
+mini_df <- omit_df %>% select(MFQpart1_2, MFQpart1_8, MFQpart1_13, MFQ_part2_2, MFQ_part2_8, MFQ_part2_13)
+omit_df <- omit_df %>% mutate(fairness_foundation = rowMeans(mini_df), 
+                              .before = Disgust_1)
+
+#ingroup foundation MFQpart1_3, MFQpart1_9, MFQpart1_14, MFQpart2_3, MFQpart2_9, MFQpart2_14
+
+mini_df <- omit_df %>% select(MFQpart1_3, MFQpart1_9, MFQpart1_14, MFQ_part2_3, MFQ_part2_9, MFQ_part2_14)
+omit_df <- omit_df %>% mutate(ingroup_foundation = rowMeans(mini_df), 
+                              .before = Disgust_1)
+
+#authoirty foundation MFQpart1_4, MFQpart1_10, MFQpart1_15, MFQpart2_4, MFQpart2_10, MFQpart2_15
+
+mini_df <- omit_df %>% select(MFQpart1_4, MFQpart1_10, MFQpart1_15, MFQ_part2_4, MFQ_part2_10, MFQ_part2_15)
+omit_df <- omit_df %>% mutate(authority_foundation = rowMeans(mini_df), 
+                              .before = Disgust_1)
+
+#purity foundation MFQpart1_5, MFQpart1_11, MFQpart1_16, MFQpart2_16, MFQpart2_11, MFQpart2_5
+
+mini_df <- omit_df %>% select(MFQpart1_5, MFQpart1_11, MFQpart1_16, MFQ_part2_16, MFQ_part2_11, MFQ_part2_5)
+omit_df <- omit_df %>% mutate(purity_foundation = rowMeans(mini_df), 
+                              .before = Disgust_1)
+
+```
+
+### COVID Stress (Mean across all five portions and five seperate)
+```{r}
+#Stress Scale Main Indice 
+
+mini_df <- omit_df %>% select(contains("Worries") | contains("Problems") | contains("Checking"))
+omit_df <- omit_df %>% mutate(Stress_index = rowMeans(mini_df),
+                              .before = Impacts_financial1)
+#Stress Scale, Sub Indice COVID danger and contamination fears
+
+mini_df <- omit_df %>% select(Worries_1:Worries_6)
+omit_df <- omit_df %>% mutate(COVIDDanger_ContFears_index = rowMeans(mini_df),
+                              .before = Impacts_financial1)
+#Stress Scale, Sub Indice COVID fears about economic consequences
+
+mini_df <- omit_df %>% select(Worries_7:Worries_12)
+omit_df <- omit_df %>% mutate(COVID_econ_fears_index = rowMeans(mini_df),
+                              .before = Impacts_financial1)
+#Stress Scale, Sub Indice COVID xenophobia
+
+mini_df <- omit_df %>% select(Worries_13:Worries_18)
+omit_df <- omit_df %>% mutate(COVID_xenophobia = rowMeans(mini_df),
+                              .before = Impacts_financial1)
+
+#Stress Scale, Sub indice COVID compulsive checking and reassurance seeking 
+
+mini_df <- omit_df %>% select(Worries_19:Worries_24,CheckingBeh_1:CheckingBeh_6)
+omit_df <- omit_df %>% mutate(COVID_checking = rowMeans(mini_df),
+                              .before = Impacts_financial1)
+
+#Stress Scale, Sub Indice COVID traumatic stress symptoms
+mini_df <- omit_df %>% select(Problems_1:Problems_6)
+omit_df <- omit_df %>% mutate(COVID_traumatic_stress = rowMeans(mini_df),
+                              .before = Impacts_financial1)
+                              
+```
+
+### COVID Impacts and Experiences (Ipmacts calculated as a mean. Expereinces calcuated as mean across three sub scales)
+```{r}
+Impacts <- omit_df %>% select(Impacts_financial1:Impacts_psychology3)
+Personal_Experiences <- omit_df %>% select(PersonalDiagnoses_1:PersonalDiagnoses_3)
+Proxmity_Experiences <- omit_df %>% select(Proximity_1:Proximity_2)
+News_Experiences <- omit_df %>% select(News_1:News_2)
+
+
+
+omit_df <- omit_df %>% mutate(Impacts_index = rowMeans(Impacts), 
+                              .before = PersonalDiagnoses_1)
+omit_df <- omit_df %>% mutate(Personal_Diagnoses_index = rowMeans(Personal_Experiences),
+                              .before = Age)
+omit_df <- omit_df %>% mutate(Proximity_to_others_index = rowMeans(Proxmity_Experiences),
+                              .before = Age)
+omit_df <- omit_df %>% mutate(News_index = rowMeans(News_Experiences),
+                              .before = Age)
+```
+
+### Disgust (Mean Index across three sub indice)
+```{r}
+#Pathogen Indice 
+
+mini_df <- omit_df %>% select(Disgust_3, Disgust_6, Disgust_9, Disgust_12, Disgust_15, Disgust_18, Disgust_21)
+omit_df <- omit_df %>% mutate(Pathogen_Disgust_index = rowMeans(mini_df), 
+                              .before = SDRS.5_Q1)
+
+#Sexual Indice 
+
+mini_df <- omit_df %>% select(Disgust_2, Disgust_5, Disgust_8, Disgust_11, Disgust_14, Disgust_17, Disgust_20)
+omit_df <- omit_df %>% mutate(Sexual_Disgust_index = rowMeans(mini_df), 
+                              .before = SDRS.5_Q1)
+
+#Moral Indice 
+
+mini_df <- omit_df %>% select(Disgust_1, Disgust_4, Disgust_7, Disgust_10, Disgust_13, Disgust_16, Disgust_19 )
+omit_df <- omit_df %>% mutate(Moral_Disgust_index = rowMeans(mini_df), 
+                              .before = SDRS.5_Q1)
+```
+
+### Social Desirability (transformed sum)
+```{r}
+mini_df <- omit_df %>% select(SDRS.5_Q1:SDRS.5_Q5)
+omit_df <- omit_df %>% mutate(SDRS_Sum = rowSums(mini_df), 
+                              .before = Worries_1)
+SDRS_Sum_scaled <- rescale(omit_df$SDRS_Sum, from = c(5, 25), to = c(20, 100))
+omit_df <- omit_df %>% mutate(SDRS_Sum_scaled, 
+                              .before = SDRS_Sum)
+
+```
+
+# Create final data set for analysis
+```{r}
+omit_df <- omit_df %>%
+  select("id","SmlK","MedK", "LrgK", "MeanK", "logMeanK", "COVID_DoG_index", "logCOVID_DoG_index", "traveling_index", "socialgatherings_index" ,  "Norms_index","FamilyNorm_index", "FriendsNorm_index" ,"StrangerNorm_index", "GCS_index", "IUS_Sum", "Measure2_liberal_Index", "Measure2_cons_Index", "Measure2_liberterian_Index", "harm_foundation", "fairness_foundation", "ingroup_foundation", "authority_foundation", "purity_foundation",  "Stress_index", "COVIDDanger_ContFears_index", "COVID_econ_fears_index", "COVID_xenophobia", "COVID_checking", "COVID_traumatic_stress", "Impacts_index", "SDRS_Sum_scaled", "Duration..in.seconds.", "Age", "Gender", "Race", "Education", "Occupation", "Nationality", "Ethnicity", "MaritalStatus")   #keep only the variables of interest
+
+#Code for writing the dataframe to a csv file
+
+#write.csv(Your DataFrame,"Path to export the DataFrame\\File Name.csv", row.names = FALSE)
+
+write.csv(omit_df,"omit_df.csv", row.names = TRUE)
+
+
+```
