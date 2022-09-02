@@ -1,0 +1,376 @@
+---
+title: "3C Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Packages
+library("ggpubr")
+library(psych)
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+library(scales)
+library(vtable)
+#install.packages("vtable")
+#install.packages("Hmisc")
+#install.packages("lmtest")
+#install.packages("jtools")
+#install.packages("interactions")
+#install.packages("lm.beta")
+#install.packages("car")
+#install.packages("sandwich")
+#install.packages("ggrepel")
+#install.packages("Metrics")
+#install.packages("pls")
+library(sandwich)
+library(car)
+library(jtools)
+library(interactions)
+library(lm.beta)
+library(lmtest)
+library(Hmisc)
+library(dplyr)
+library(Metrics)
+library(pls)
+library(GGally)
+#library(plyr)
+
+```
+# Analyses 
+
+# load final dataset
+```{r}
+omit_df <- read.csv("omit_df.csv", header=T, na.strings="")
+```
+
+## Summary statistics table
+
+```{r}
+data(omit_df)
+st(omit_df, vars = c('logMeanK', 'logCOVID_DoG_index','GCS_index', 'Norms_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index', 'harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'Stress_index', 'Impacts_index', 'SDRS_Sum_scaled'))
+
+labs <- data.frame(name1= c('logMeanK', 'logCOVID_DoG_index', 'GCS_index', 'Norms_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index', 'harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'Stress_index', 'Impacts_index', 'SDRS_Sum_scaled'), name2 = c('Temporal discounting','COVID-19 delay of gratification', 'Uncertainty', 'COVID-19 social norms', 'Liberal political oreintation', 'Liberterian political oreintaiton', 'Conservative political oreintation', 'Harm Foundation', 'Fariness Foundation', 'Authority Foundation','Ingroup Foundation', 'Purity Foundation', 'COVID-19 Stress', 'COVID-19 Impact', 'Socail Deserability'))
+
+sumtable(omit_df,
+         summ =c('mean(x)',
+               'sd(x)',
+               'min(x)',
+               'max(x)'), 
+         vars = c('logMeanK', 'logCOVID_DoG_index', 'Norms_index','GCS_index','harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'SDRS_Sum_scaled','Impacts_index', 'Stress_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index'),labels =labs)
+
+vartable <-vtable(omit_df, out = 'return')
+vartable
+```
+
+
+# Demographics 
+
+```{r}
+#duration
+
+mean(omit_df$Duration..in.seconds.)
+sd(omit_df$Duration..in.seconds.)
+
+#demographics
+
+summary(omit_df$Age)
+mean(omit_df$Age)
+sd(omit_df$Age)
+max(omit_df$Age)
+table(omit_df$Gender)
+table(omit_df$Race)
+table(omit_df$Ethnicity)
+table(omit_df$Education)
+table(omit_df$MaritalStatus)
+```
+
+# Correlation Matrices 
+```{r}
+
+omit_df_viz <- omit_df[c(7,9,12,16, 18:20, 21:26, 32, 33)]
+
+omit_df_viz<- rename(omit_df_viz, MCQ = logMeanK,
+                     DoG = logCOVID_DoG_index,
+                     Norms = Norms_index,
+                     Uncert = GCS_index,
+                     Libe = Measure2_liberal_Index,
+                     Cons = Measure2_cons_Index,
+                   Libert = Measure2_liberterian_Index,
+                   Harm = harm_foundation,
+                   Fair = fairness_foundation,
+                   Loyal = ingroup_foundation,
+                   Auth = authority_foundation,
+                   pur = purity_foundation,
+                  Stres= Stress_index,
+                   Impac = Impacts_index,
+                   Soc = SDRS_Sum_scaled)
+ggpairs(omit_df_viz,
+      title  = "Correlation matrix of variables",
+      )
+```
+
+# Main Models of Interest 
+## Hierarchical Linear Regressions, COVID DoG  
+
+```{r}
+Model0 <- lm(logCOVID_DoG_index ~ 1, data = omit_df) #to obtain Total SS
+
+Model1 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled, data = omit_df)
+
+Model2 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index, data = omit_df)
+
+Model3 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index, data = omit_df)
+
+Model4 <-lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index, data = omit_df)
+
+Model5 <- lm(logCOVID_DoG_index ~  SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation, data = omit_df)
+
+Model6 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index, data = omit_df)
+
+Model7 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index + logMeanK, data = omit_df)
+```
+
+##Comparing SS
+
+```{r}
+anova(Model0)
+
+#What is the SS of all the rest of the models?
+
+anova(Model1, Model2, Model3, Model4, Model5, Model6, Model7)
+
+#what do the individual models look like?
+
+summary(Model1)
+summary(Model2)
+summary(Model3)
+summary(Model4)
+summary(Model5)
+summary(Model6)
+summary(Model7)
+
+#what is the difference in r2?
+
+#Model 2,  0.07323 - Model 1, 0.003554 = 0.069676
+
+0.07323- 0.003554 
+
+#Model 3,  0.0734  - Model 2,  0.07323 = 0.2482
+
+ 0.0734- 0.07323
+
+#Model 4, 0.2851 - Model 3, 0.0734 = 0.2117
+
+0.2851 - 0.0734
+
+#Model 5,0.3638- Model 4, -  0.2851 = 0.0375
+0.3638 -  0.2851
+
+#Model 6, 0.3717 - Model 5, 0.3638 =  0.0079
+
+0.3717- 0.3638
+
+#Model 7, 0.3806 - Model 6, 0.3717 = 0.0089
+
+ 0.3806 - 0.3717
+```
+
+## Hierarchical Linear Regressions, MCQ
+
+```{r}
+
+MCQModel0 <- lm(logMeanK ~ 1, data = omit_df) #to obtain Total SS
+
+MCQModel1 <- lm(logMeanK ~ SDRS_Sum_scaled, data = omit_df)
+
+MCQModel2 <- lm(logMeanK ~ SDRS_Sum_scaled+ GCS_index, data = omit_df)
+
+```
+
+## Comparing SS
+```{r}
+anova(MCQModel0)
+
+#Total SS is 758.7
+
+#What is the SS of all the rest of the models?
+
+anova(MCQModel1, MCQModel2)
+
+#This suggests to throw out x,y ,z. 
+
+#what do the individual models look like?
+
+summary(MCQModel1)
+summary(MCQModel2)
+
+
+#what is the difference in r2?
+
+#Model 2,  0.018427 - Model 1,  0.006085	 = 0.012335
+
+0.01842 -  0.006085
+
+
+```
+
+## Correlation Comparisons 
+```{r}
+#correlation comparison 
+ggscatter(omit_df, x = "GCS_index", y = "logMeanK", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "GCS_index", ylab = "logMeanK")
+#DoG and Uncertainty
+ggscatter(omit_df, x = "GCS_index", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "GCS_index ", ylab = "logCOVID_DoG_index")
+
+#Fischer-Z Comparison
+paired.r(0.11, -0.022, NULL, 384)
+```
+
+```{r}
+#correlation comparison, norms index 
+
+ggscatter(omit_df, x = "Norms_index", y = "logMeanK", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Norms_index", ylab = "logMeanK")
+
+ggscatter(omit_df, x = "Norms_index", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Norms_index", ylab = "logCOVID_DoG_index")
+
+#Fischer-Z Comparison
+paired.r(0.078, -0.5, NULL, 384)
+
+```
+
+```{r}
+#correlation comparison, MFT fairness
+ggscatter(omit_df, x = "fairness_foundation", y = "logMeanK", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "fairness_foundation", ylab = "logMeanK")
+
+ggscatter(omit_df, x = "fairness_foundation", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "fairness_foundation", ylab = "logCOVID_DoG_index")
+
+#Fischer-Z Comparison
+paired.r(0.000, .37, NULL, 384)
+```
+
+
+```{r}
+#correlation comparison, MFT loyalty, aka ingroup
+ggscatter(omit_df, x = "ingroup_foundation", y = "logMeanK", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "ingroup_foundation", ylab = "logMeanK")
+
+ggscatter(omit_df, x = "ingroup_foundation", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "ingroup_foundation", ylab = "logCOVID_DoG_index")
+
+#Fischer-Z Comparison
+paired.r(0.097, -0.19, NULL, 383)
+```
+
+```{r}
+#correlation comparison, conservative 
+ggscatter(omit_df, x = "Measure2_cons_Index", y = "logMeanK", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Measure2_cons_Index", ylab = "logMeanK")
+
+ggscatter(omit_df, x = "Measure2_cons_Index", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Measure2_cons_Index ", ylab = "logCOVID_DoG_index")
+
+#Fischer-Z Comparison
+paired.r(0.036, -.37, NULL, 384)
+```
+
+```{r}
+#correlation comparison, stress
+ggscatter(omit_df, x = "Stress_index", y = "logMeanK", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Stress_index", ylab = "logMeanK")
+
+ggscatter(omit_df, x = "Stress_index", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Stress_index", ylab = "logCOVID_DoG_index")
+
+#Fischer-Z Comparison
+paired.r(0.15, 0.25, NULL, 384)
+
+```
+
+# Misc Models
+## Is age predictive of COVID DoG? 
+```{r}
+
+AgeModel <- lm(logCOVID_DoG_index ~ Age , data = omit_df)
+
+summary(AgeModel)
+
+plot(AgeModel)
+
+outlierTest(AgeModel)
+
+omit_df_age_outliers <-omit_df[!(omit_df$id=="59" | omit_df$id=="212" | omit_df$id=="10" | omit_df$id=="15" | omit_df$id=="132" | omit_df$id=="262" | omit_df$id=="156" | omit_df$id=="157" | omit_df$id=="44" | omit_df$id=="253" | omit_df$id=="26" | omit_df$id=="109" | omit_df$id=="51" | omit_df$id=="238"),]
+
+AgeModel2 <- lm(logCOVID_DoG_index ~ Age, data = omit_df_age_outliers) 
+
+outlierTest(AgeModel2)
+
+summary(AgeModel2)
+
+plot(AgeModel2)
+```
+
+## What does a simultaneous model look like based on what was sig in the HLR?
+
+```{r}
+MegaModel1 <- lm(logCOVID_DoG_index ~ Stress_index + Norms_index + fairness_foundation + ingroup_foundation + Measure2_cons_Index + logMeanK, data = omit_df)
+
+summary(MegaModel1)
+
+plot(MegaModel1)
+
+vif(MegaModel1)
+
+outlierTest(MegaModel1)
+
+MM1_outliers <-omit_df[!(omit_df$id=="10" | omit_df$id=="253" | omit_df$id=="238"),] 
+
+MegaModel2 <- lm(logCOVID_DoG_index ~ Stress_index + Norms_index+ fairness_foundation + ingroup_foundation + Measure2_cons_Index + logMeanK, data = MM1_outliers)
+
+summary(MegaModel2)
+
+plot(MegaModel2)
+
+outlierTest(MegaModel2)
+
+MegaModel3 <- lm(logMeanK ~ GCS_index, data = omit_df)
+
+summary(MegaModel3)
+
+outlierTest(MegaModel3)
+
+
+```
