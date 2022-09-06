@@ -20,7 +20,7 @@ library(Hmisc)
 library(dplyr)
 ```
 
-# Processing. 
+# Processing
 
 ## Load and Cleanup Data
 
@@ -166,7 +166,7 @@ omit_df
 
 ```
 
-## COVID DoG and Pandemic Expextation Processing 
+## COVID DoG and Pandemic Expextation Processing (not using pandemic expextation variable in final dataset) 
 
 ```{r}
 # make index of delaying across all 6 questions (average delaying across categories)
@@ -187,7 +187,7 @@ omit_df <- omit_df %>% mutate(traveling_index = rowMeans(mini_df),
 
 ```
 
-## automatic outlier work 
+## automatic outlier work, just to see what our dataset is looking like 
 
 ```{r}
 #What does the COVID DoG distribution look like?
@@ -223,7 +223,7 @@ no_outliers <- subset(omit_df, omit_df$COVID_DoG_index > (Q1 - 1.5*IQR) & omit_d
 
 ```
 
-## Normalize COVID DoG and Pandemic Length Expextation Data 
+## Normalize COVID DoG and Pandemic Length Expextation Data (again not using pandemic expextation)
 
 ```{r}
 
@@ -462,7 +462,6 @@ omit_df <- omit_df%>%
   add_column(logSmlK = MCQdata$logSmlK,
              .after = "MCQ_27") 
 
-
 omit_df <- omit_df%>%
   add_column(logMedK = MCQdata$logMedK,
              .after = "MCQ_27") 
@@ -522,7 +521,7 @@ omit_df <- omit_df %>% mutate(StrangerNorm_index = rowMeans(mini_df),
 
 ```
 
-### General Confidence (sum score)
+### General Confidence, reversed scored to be uncertainty measure (sum score)
 
 ```{r}
 
@@ -550,7 +549,7 @@ omit_df <- omit_df %>% mutate(GCS_index = rowMeans(mini_df),
 
 ```
 
-### Intolerance of Uncertainty (sum score, 3 indices)
+### Intolerance of Uncertainty (sum score, 3 indices, not using in final dataset)
 
 ```{r}
 mini_df <- omit_df %>% select(IUS_1:IUS_12)
@@ -580,7 +579,7 @@ mini_df <- omit_df %>% select(Measure2_4)
 omit_df <- omit_df %>% mutate(Measure2_liberterian_Index = rowMeans(mini_df), 
                               .before = Measure5_1)
 
-# measure 5 indices (inactive)
+# measure 5 indices (inactive for final dataset)
 
 #re-coding reverse coded variables
 #mini_df <- omit_df %>% select(Measure5_1, Measure5_7)
@@ -696,7 +695,7 @@ omit_df <- omit_df %>% mutate(News_index = rowMeans(News_Experiences),
                               .before = Age)
 ```
 
-### Disgust (Mean Index across three sub indice)
+### Disgust (Mean Index across three sub indice, not using in final dataset)
 ```{r}
 #Pathogen Indice 
 
@@ -728,6 +727,143 @@ omit_df <- omit_df %>% mutate(SDRS_Sum_scaled,
 
 ```
 
+# Indice reliabilities
+
+#COVID DoG 
+
+```{r}
+
+#create CDOG Subset 
+
+CDOG <- select(omit_df, 57:62 )
+
+psych::alpha(CDOG)
+
+```
+
+
+#MCQ
+
+```{r}
+#create MCQ cons Subset 
+
+mini_df <- omit_df %>% select(LrgCons:SmlCons)
+omit_df <- omit_df %>% mutate(Mean_Cons = rowMeans(mini_df),
+                              .before = LrgICR)
+mean(omit_df$Mean_Cons)
+sd(omit_df$Mean_Cons)
+
+```
+
+## Norms
+```{r}
+#create Norms Subset 
+
+Norm_DF <- select(omit_df,67:75 )
+
+psych::alpha(Norm_DF)
+
+```
+
+## SD (ned to add in reverse code )
+```{r}
+#create SD Subset 
+
+SD_DF <- select(omit_df,176:180)
+
+psych::alpha(SD_DF, keys = c(1, -1, -1, -1, 1))
+
+```
+
+## Uncertainty (need to add in reverse code)
+
+```{r}
+#create Uncertainty Subset 
+
+Uncertainty_DF <- select(omit_df, 92:94, 96:98 )
+
+psych::alpha(Uncertainty_DF, keys = c(1, 1, 1, 1, -1, 1))
+
+```
+
+## MFT
+
+### Care
+
+```{r}
+#create Care Subset 
+
+Care_DF <- select(omit_df, 115, 121, 126, 131, 137, 142)
+
+psych::alpha(Care_DF)
+
+```
+
+### Fairness
+
+```{r}
+#create fairness Subset 
+
+Fairness_DF <- select(omit_df,116, 122, 127, 132, 138, 143)
+
+psych::alpha(Fairness_DF)
+
+```
+
+### Loyalty
+```{r}
+#create Loyalty Subset 
+
+Loyalty_DF <- select(omit_df, 117, 123, 128, 133, 139, 144)
+
+psych::alpha(Loyalty_DF)
+
+```
+
+### Authority 
+
+```{r}
+#create authority Subset 
+
+Authority_DF <- select(omit_df,118, 124, 129, 134, 140, 145)
+
+psych::alpha(Authority_DF)
+
+```
+
+### Purity
+
+```{r}
+#create purity Subset 
+
+Purity_DF <- select(omit_df, 119, 225, 130, 135, 141, 146)
+
+psych::alpha(Purity_DF)
+
+```
+
+
+## Stress
+```{r}
+#create Stress Subset 
+
+Stress_DF <- select(omit_df, 183:218)
+
+psych::alpha(Stress_DF)
+
+```
+
+## Impact (need to add in reverse code)
+```{r}
+#create impact Subset 
+
+Impact_DF <- select(omit_df, 225:233)
+
+psych::alpha(Impact_DF, keys = c(1, 1, -1, 1, 1, -1, 1, 1, -1))
+
+```
+
+
 # Create final data set for analysis
 ```{r}
 omit_df <- omit_df %>%
@@ -738,6 +874,5 @@ omit_df <- omit_df %>%
 #write.csv(Your DataFrame,"Path to export the DataFrame\\File Name.csv", row.names = FALSE)
 
 write.csv(omit_df,"omit_df.csv", row.names = TRUE)
-
-
 ```
+
