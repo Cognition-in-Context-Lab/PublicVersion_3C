@@ -48,7 +48,7 @@ library(GGally)
 omit_df <- read.csv("omit_df.csv", header=T, na.strings="")
 ```
 
-## Summary statistics table
+# Summary statistics table
 
 ```{r}
 data(omit_df)
@@ -219,101 +219,104 @@ summary(MCQModel2)
 
 ```
 
-## Correlation Comparisons 
+# Correlation Comparisons + general correlations for figures 
+
+## GCS 
 ```{r}
-#correlation comparison 
 ggscatter(omit_df, x = "GCS_index", y = "logMeanK", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "GCS_index", ylab = "logMeanK")
+          xlab = "Uncertainty", ylab = "Temporal Discounting")
 #DoG and Uncertainty
 ggscatter(omit_df, x = "GCS_index", y = "logCOVID_DoG_index", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "GCS_index ", ylab = "logCOVID_DoG_index")
+          xlab = "Uncertainty ", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.11, -0.022, NULL, 384)
 ```
 
+## Norms
 ```{r}
-#correlation comparison, norms index 
-
 ggscatter(omit_df, x = "Norms_index", y = "logMeanK", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Norms_index", ylab = "logMeanK")
+          xlab = "COVID-19 Social Norms", ylab = "Temporal Discounting")
 
 ggscatter(omit_df, x = "Norms_index", y = "logCOVID_DoG_index", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Norms_index", ylab = "logCOVID_DoG_index")
+          xlab = "COVID-19 Social Norms", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.078, -0.5, NULL, 384)
 
 ```
 
+## Moral Foundations
+###Fairness 
+
 ```{r}
-#correlation comparison, MFT fairness
 ggscatter(omit_df, x = "fairness_foundation", y = "logMeanK", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "fairness_foundation", ylab = "logMeanK")
+          xlab = "Fairness Foundation", ylab = "Temporal Discounting")
 
 ggscatter(omit_df, x = "fairness_foundation", y = "logCOVID_DoG_index", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "fairness_foundation", ylab = "logCOVID_DoG_index")
+          xlab = "Fairness Foundation", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.000, .37, NULL, 384)
 ```
 
 
+###Loyalty 
 ```{r}
-#correlation comparison, MFT loyalty, aka ingroup
 ggscatter(omit_df, x = "ingroup_foundation", y = "logMeanK", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "ingroup_foundation", ylab = "logMeanK")
+          xlab = "Loyalty Foundation", ylab = "Temporal Discounting")
 
 ggscatter(omit_df, x = "ingroup_foundation", y = "logCOVID_DoG_index", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "ingroup_foundation", ylab = "logCOVID_DoG_index")
+          xlab = "Loyalty Foundation", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.097, -0.19, NULL, 383)
 ```
 
+## Political Orientation, Cons 
 ```{r}
-#correlation comparison, conservative 
 ggscatter(omit_df, x = "Measure2_cons_Index", y = "logMeanK", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Measure2_cons_Index", ylab = "logMeanK")
+          xlab = "Conservative Political Orientation", ylab = "Temporal Discounting")
 
 ggscatter(omit_df, x = "Measure2_cons_Index", y = "logCOVID_DoG_index", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Measure2_cons_Index ", ylab = "logCOVID_DoG_index")
+          xlab = "Conservative Political Orientation", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.036, -.37, NULL, 384)
 ```
 
+
+## Stress 
 ```{r}
-#correlation comparison, stress
 ggscatter(omit_df, x = "Stress_index", y = "logMeanK", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Stress_index", ylab = "logMeanK")
+          xlab = "COVID-19 Stress", ylab = "Temporal Discounting")
 
 ggscatter(omit_df, x = "Stress_index", y = "logCOVID_DoG_index", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Stress_index", ylab = "logCOVID_DoG_index")
+          xlab = "COVID-19 Stress", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.15, 0.25, NULL, 384)
