@@ -1,7 +1,7 @@
 # PublicVersion_3C
 This repository contains all the files necessary to replicate "Worth the wait? Contextual influences on delaying gratification during the COVID-19 pandemic". See the README file for details on the repository.
 
-NOTE: The Loyalty foundation is named ingroup throughout the processing and analysis scripts. There are also a handful of variables in the processing script that are not included in the analysis manuscript as they weren't used in the manuscript.
+NOTE: The Loyalty foundation is named ingroup throughout the processing and analysis scripts. There are also a handful of variables in the processing script that are not included in the analysis manuscript as they weren't used in the manuscript. The codebook is attatched to help with understanding what the variables are. 
 
 For processing, cleaning, and exclusions, you will need the following files: 1. <lookup1MCQ.txt> 2. <lookup2MCQ.txt> 3. <lookup3MCQ.txt> 4. <3C_processing.Rmd> 5. <3C_Live_Study_data.csv>. The <3C_processing.Rmd> file on successfully running will spit out the final data frame for analyses, <omit_df.csv>.
 
