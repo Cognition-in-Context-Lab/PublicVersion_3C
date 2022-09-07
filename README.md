@@ -1,9 +1,11 @@
 # PublicVersion_3C
 This repository contains all the files necessary to replicate "Worth the wait? Contextual influences on delaying gratification during the COVID-19 pandemic". See the README file for details on the repository.
 
-NOTE: The Loyalty foundation is named ingroup throughout the processing and analysis scripts. There are also a handful of variables in the processing script that are not included in the analysis manuscript as they weren't used in the manuscript. The codebook is attatched to help with understanding what the variables are. 
+NOTE: The Loyalty foundation is named "ingroup_foundation" throughout the processing and analysis scripts. There are also a handful of variables in the processing script that are not included in the analysis manuscript as they weren't used in the manuscript. The codebook is included to help with understanding what the variables are in R.  The appendix contains the measures in their entirety. 
 
-For processing, cleaning, and exclusions, you will need the following files: 1. <lookup1MCQ.txt> 2. <lookup2MCQ.txt> 3. <lookup3MCQ.txt> 4. <3C_processing.Rmd> 5. <3C_Live_Study_data.csv>. The <3C_processing.Rmd> file on successfully running will spit out the final data frame for analyses, <omit_df.csv>.
+Participants were recruited via CloudResearch, a website that manages Mturk HITs (Human Intelligence Tasks). Data were collected on February 12, 2021 from a sample of 440 individuals in the US, who were paid $2 for completing the study. Data were collected via Qualtrics. 
+
+For processing, cleaning, and exclusions, you will need the following files: 1. <lookup1MCQ.txt> 2. <lookup2MCQ.txt> 3. <lookup3MCQ.txt> 4. <3C_processing.Rmd> 5. <3C_Live_Study_data.csv>. The <3C_processing.Rmd> file on successfully running will spit out the final data frame for analyses, <omit_df.csv>. The <lookupMCQ.txt> files are used to automatically calculate the temporal discounting/MCQ indices.
 
 For analyses, you will need the following files: 1. <3c_analysis.Rmd> 2. <omit_df.csv>. The  <3c_analysis.Rmd> will run all the analyses needed to replicate the manuscripts results section.
 
