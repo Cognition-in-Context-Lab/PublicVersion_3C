@@ -27,6 +27,7 @@ library(vtable)
 #install.packages("ggrepel")
 #install.packages("Metrics")
 #install.packages("pls")
+#install.packages("EnvStats")
 library(sandwich)
 library(car)
 library(jtools)
@@ -40,6 +41,7 @@ library(pls)
 library(GGally)
 #library(plyr)
 
+
 ```
 # Analyses 
 
@@ -48,23 +50,30 @@ library(GGally)
 omit_df <- read.csv("omit_df.csv", header=T, na.strings="")
 ```
 
+
 # Summary statistics table
 
 ```{r}
 data(omit_df)
-st(omit_df, vars = c('logMeanK', 'logCOVID_DoG_index','GCS_index', 'Norms_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index', 'harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'Stress_index', 'Impacts_index', 'SDRS_Sum_scaled'))
+st(omit_df, vars = c('logMeanK','GCS_index', 'Norms_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index', 'harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'Stress_index', 'Impacts_index', 'SDRS_Sum_scaled'))
 
-labs <- data.frame(name1= c('logMeanK', 'logCOVID_DoG_index', 'GCS_index', 'Norms_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index', 'harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'Stress_index', 'Impacts_index', 'SDRS_Sum_scaled'), name2 = c('Temporal discounting','COVID-19 delay of gratification', 'Uncertainty', 'COVID-19 social norms', 'Liberal political oreintation', 'Liberterian political oreintaiton', 'Conservative political oreintation', 'Harm Foundation', 'Fariness Foundation', 'Authority Foundation','Ingroup Foundation', 'Purity Foundation', 'COVID-19 Stress', 'COVID-19 Impact', 'Socail Deserability'))
+labs <- data.frame(name1= c('logMeanK', 'GCS_index', 'Norms_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index', 'harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'Stress_index', 'Impacts_index', 'SDRS_Sum_scaled'), name2 = c('Temporal discounting', 'Uncertainty', 'COVID-19 social norms', 'Liberal political oreintation', 'Liberterian political oreintaiton', 'Conservative political oreintation', 'Harm Foundation', 'Fariness Foundation', 'Authority Foundation','Ingroup Foundation', 'Purity Foundation', 'COVID-19 Stress', 'COVID-19 Impact', 'Socail Deserability'))
 
 sumtable(omit_df,
          summ =c('mean(x)',
                'sd(x)',
                'min(x)',
                'max(x)'), 
-         vars = c('logMeanK', 'logCOVID_DoG_index', 'Norms_index','GCS_index','harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'SDRS_Sum_scaled','Impacts_index', 'Stress_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index'),labels =labs)
+         vars = c('logMeanK', 'Norms_index','GCS_index','harm_foundation', 'fairness_foundation', 'authority_foundation', 'ingroup_foundation', 'purity_foundation', 'SDRS_Sum_scaled','Impacts_index', 'Stress_index', 'Measure2_liberal_Index', 'Measure2_liberterian_Index', 'Measure2_cons_Index'),labels =labs)
 
 vartable <-vtable(omit_df, out = 'return')
 vartable
+
+#What about COVID DoG Mean?
+
+(mean(omit_df$logCOVID_DoG_index))
+
+
 ```
 
 
@@ -81,6 +90,7 @@ sd(omit_df$Duration..in.seconds.)
 summary(omit_df$Age)
 mean(omit_df$Age)
 sd(omit_df$Age)
+median(omit_df$Age)
 max(omit_df$Age)
 table(omit_df$Gender)
 table(omit_df$Race)
@@ -147,12 +157,25 @@ anova(Model1, Model2, Model3, Model4, Model5, Model6, Model7)
 #what do the individual models look like?
 
 summary(Model1)
+outlierTest(Model1)
+
 summary(Model2)
+outlierTest(Model2)
+
 summary(Model3)
+outlierTest(Model3)
+
 summary(Model4)
+outlierTest(Model4)
+
 summary(Model5)
+outlierTest(Model5)
+
 summary(Model6)
+outlierTest(Model6)
+
 summary(Model7)
+outlierTest(Model7)
 
 #what is the difference in r2?
 
@@ -179,6 +202,130 @@ summary(Model7)
 
  0.3806 - 0.3717
 ```
+
+## Hierarchical Linear Regressions, COVID DoG  w/o outliers
+
+### Identying outiers 
+```{r}
+
+#Model 1
+outlierTest(Model1)
+
+omit_df_m1_outliers <-omit_df[!(omit_df$id=="59" | omit_df$id=="156" | omit_df$id=="212" | omit_df$id=="26" |  omit_df$id=="262" |  omit_df$id=="44"  | omit_df$id=="132" | omit_df$id=="157" | omit_df$id=="10" | omit_df$id=="15" |omit_df$id=="109" | omit_df$id=="253" | omit_df$id=="51" | omit_df$id=="238" ),]
+                                
+
+Model1.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled, data =omit_df_m1_outliers)
+
+outlierTest(Model1.5)
+
+summary(Model1.5)
+
+#Model 2
+outlierTest(Model2)
+
+omit_df_m2_outliers <-omit_df[!(omit_df$id=="156" | omit_df$id=="212" | omit_df$id=="26" |  omit_df$id=="262" |  omit_df$id=="44"  | omit_df$id=="132" | omit_df$id=="157" | omit_df$id=="10" | omit_df$id=="15" |omit_df$id=="109" | omit_df$id=="253" | omit_df$id=="51" | omit_df$id=="238" | omit_df$id=="318" | omit_df$id=="59" | omit_df$id=="315" ),]
+
+
+Model2.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index, data =omit_df_m2_outliers)
+
+outlierTest(Model2.5)
+
+summary(Model2.5)
+
+outlierTest(Model3)
+
+outlierTest(Model4)
+
+outlierTest(Model5)
+
+outlierTest(Model6)
+
+outlierTest(Model7)
+
+```
+
+
+```{r}
+Model0 <- lm(logCOVID_DoG_index ~ 1, data = omit_df) #to obtain Total SS
+
+Model1 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled, data = omit_df)
+
+Model2 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index, data = omit_df)
+
+Model3 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index, data = omit_df)
+
+Model4 <-lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index, data = omit_df)
+
+Model5 <- lm(logCOVID_DoG_index ~  SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation, data = omit_df)
+
+Model6 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index, data = omit_df)
+
+Model7 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index + logMeanK, data = omit_df)
+```
+
+##Comparing SS
+
+```{r}
+anova(Model0)
+
+#What is the SS of all the rest of the models?
+
+anova(Model1, Model2, Model3, Model4, Model5, Model6, Model7)
+
+#what do the individual models look like?
+
+summary(Model1)
+outlierTest(Model1)
+
+omit_df_m1_outliers <-omit_df[!(omit_df$id=="59" | omit_df$id=="156" | omit_df$id=="212" ),]
+                                
+# omit_df$id=="10" | omit_df$id=="15" | omit_df$id=="132" | omit_df$id=="262" | omit_df$id=="157" | omit_df$id=="44" | omit_df$id=="253" | omit_df$id=="26" | omit_df$id=="109" | omit_df$id=="51" | omit_df$id=="238"),]
+
+summary(Model2)
+outlierTest(Model2)
+
+summary(Model3)
+outlierTest(Model3)
+
+summary(Model4)
+outlierTest(Model4)
+
+summary(Model5)
+outlierTest(Model5)
+
+summary(Model6)
+outlierTest(Model6)
+
+summary(Model7)
+outlierTest(Model7)
+
+#what is the difference in r2?
+
+#Model 2,  0.07323 - Model 1, 0.003554 = 0.069676
+
+0.07323- 0.003554 
+
+#Model 3,  0.0734  - Model 2,  0.07323 = 0.2482
+
+ 0.0734- 0.07323
+
+#Model 4, 0.2851 - Model 3, 0.0734 = 0.2117
+
+0.2851 - 0.0734
+
+#Model 5,0.3638- Model 4, -  0.2851 = 0.0375
+0.3638 -  0.2851
+
+#Model 6, 0.3717 - Model 5, 0.3638 =  0.0079
+
+0.3717- 0.3638
+
+#Model 7, 0.3806 - Model 6, 0.3717 = 0.0089
+
+ 0.3806 
+   
+```
+
 
 ## Hierarchical Linear Regressions, MCQ
 
@@ -207,7 +354,12 @@ anova(MCQModel1, MCQModel2)
 #what do the individual models look like?
 
 summary(MCQModel1)
+outlierTest(MCQModel1)
 summary(MCQModel2)
+outlierTest(MCQModel2)
+
+#no outliers! 
+
 
 
 #what is the difference in r2?
@@ -344,6 +496,26 @@ outlierTest(AgeModel2)
 summary(AgeModel2)
 
 plot(AgeModel2)
+```
+
+## What norms are predictive of COVID DoG? 
+
+```{r}
+
+NormsModel1 <- lm(logCOVID_DoG_index ~ FamilyNorm_index + FriendsNorm_index + StrangerNorm_index, data = omit_df)
+
+summary(NormsModel)
+
+outlierTest(NormsModel1)
+
+omit_df_norm_outliers <-omit_df[!(omit_df$id=="59" | omit_df$id=="212" | omit_df$id=="10" | omit_df$id=="15" | omit_df$id=="132" | omit_df$id=="262" | omit_df$id=="156" | omit_df$id=="157" | omit_df$id=="44" | omit_df$id=="253" | omit_df$id=="26" | omit_df$id=="109" | omit_df$id=="51" | omit_df$id=="238"),]
+
+NormsModel2 <- lm(logCOVID_DoG_index ~ FamilyNorm_index + FriendsNorm_index + StrangerNorm_index, data = omit_df_norm_outliers) 
+
+outlierTest(NormsModel2)
+
+summary(NormsModel2)
+
 ```
 
 ## What does a simultaneous model look like based on what was sig in the HLR?
