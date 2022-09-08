@@ -733,11 +733,25 @@ omit_df <- omit_df %>% mutate(SDRS_Sum_scaled,
 
 ```{r}
 
-#create CDOG Subset 
+#create CDOG Subset for total score
 
-CDOG <- select(omit_df, 57:62 )
+CDOGTotal <- select(omit_df, 58:63 )
 
-psych::alpha(CDOG)
+psych::alpha(CDOGTotal)
+
+#create CDoG subset for social score
+
+CDoGSocial <- select(omit_df, 58:60 ) 
+
+psych::alpha(CDoGSocial)
+
+
+#create CDoG subset for Travel score
+
+CDoGTravel <- select(omit_df, 61:63 )
+
+psych::alpha(CDoGTravel)
+
 
 ```
 
@@ -759,7 +773,7 @@ sd(omit_df$Mean_Cons)
 ```{r}
 #create Norms Subset 
 
-Norm_DF <- select(omit_df,67:75 )
+Norm_DF <- select(omit_df,68:76 )
 
 psych::alpha(Norm_DF)
 
@@ -769,7 +783,7 @@ psych::alpha(Norm_DF)
 ```{r}
 #create SD Subset 
 
-SD_DF <- select(omit_df,176:180)
+SD_DF <- select(omit_df,177:181)
 
 psych::alpha(SD_DF, keys = c(1, -1, -1, -1, 1))
 
@@ -780,7 +794,7 @@ psych::alpha(SD_DF, keys = c(1, -1, -1, -1, 1))
 ```{r}
 #create Uncertainty Subset 
 
-Uncertainty_DF <- select(omit_df, 92:94, 96:98 )
+Uncertainty_DF <- select(omit_df, 93:95, 97:99 )
 
 psych::alpha(Uncertainty_DF, keys = c(1, 1, 1, 1, -1, 1))
 
@@ -793,7 +807,7 @@ psych::alpha(Uncertainty_DF, keys = c(1, 1, 1, 1, -1, 1))
 ```{r}
 #create Care Subset 
 
-Care_DF <- select(omit_df, 115, 121, 126, 131, 137, 142)
+Care_DF <- select(omit_df, 116, 122, 127, 132, 138, 143)
 
 psych::alpha(Care_DF)
 
@@ -804,7 +818,7 @@ psych::alpha(Care_DF)
 ```{r}
 #create fairness Subset 
 
-Fairness_DF <- select(omit_df,116, 122, 127, 132, 138, 143)
+Fairness_DF <- select(omit_df,117, 123, 128, 133, 139, 144)
 
 psych::alpha(Fairness_DF)
 
@@ -814,7 +828,7 @@ psych::alpha(Fairness_DF)
 ```{r}
 #create Loyalty Subset 
 
-Loyalty_DF <- select(omit_df, 117, 123, 128, 133, 139, 144)
+Loyalty_DF <- select(omit_df, 118, 124, 129, 134, 140, 145)
 
 psych::alpha(Loyalty_DF)
 
@@ -825,7 +839,7 @@ psych::alpha(Loyalty_DF)
 ```{r}
 #create authority Subset 
 
-Authority_DF <- select(omit_df,118, 124, 129, 134, 140, 145)
+Authority_DF <- select(omit_df,119, 125, 130, 135, 141, 146)
 
 psych::alpha(Authority_DF)
 
@@ -836,7 +850,7 @@ psych::alpha(Authority_DF)
 ```{r}
 #create purity Subset 
 
-Purity_DF <- select(omit_df, 119, 225, 130, 135, 141, 146)
+Purity_DF <- select(omit_df, 120, 126, 131, 136, 142, 147)
 
 psych::alpha(Purity_DF)
 
@@ -847,7 +861,7 @@ psych::alpha(Purity_DF)
 ```{r}
 #create Stress Subset 
 
-Stress_DF <- select(omit_df, 183:218)
+Stress_DF <- select(omit_df, 184:219)
 
 psych::alpha(Stress_DF)
 
@@ -857,7 +871,7 @@ psych::alpha(Stress_DF)
 ```{r}
 #create impact Subset 
 
-Impact_DF <- select(omit_df, 225:233)
+Impact_DF <- select(omit_df, 226:234)
 
 psych::alpha(Impact_DF, keys = c(1, 1, -1, 1, 1, -1, 1, 1, -1))
 
