@@ -25,9 +25,9 @@ library(vtable)
 #install.packages("car")
 #install.packages("sandwich")
 #install.packages("ggrepel")
-#install.packages("Metrics")
+#install.package
 #install.packages("pls")
-#install.packages("EnvStats")
+install.packages("EnvStats")
 library(sandwich)
 library(car)
 library(jtools)
@@ -39,6 +39,7 @@ library(dplyr)
 library(Metrics)
 library(pls)
 library(GGally)
+library(EnvStats)
 #library(plyr)
 
 
@@ -97,6 +98,10 @@ table(omit_df$Race)
 table(omit_df$Ethnicity)
 table(omit_df$Education)
 table(omit_df$MaritalStatus)
+
+#occupation and nationality were hand coded. See github readme for more info!
+
+
 ```
 
 # Correlation Matrices 
@@ -177,154 +182,96 @@ outlierTest(Model6)
 summary(Model7)
 outlierTest(Model7)
 
-#what is the difference in r2?
-
-#Model 2,  0.07323 - Model 1, 0.003554 = 0.069676
-
-0.07323- 0.003554 
-
-#Model 3,  0.0734  - Model 2,  0.07323 = 0.2482
-
- 0.0734- 0.07323
-
-#Model 4, 0.2851 - Model 3, 0.0734 = 0.2117
-
-0.2851 - 0.0734
-
-#Model 5,0.3638- Model 4, -  0.2851 = 0.0375
-0.3638 -  0.2851
-
-#Model 6, 0.3717 - Model 5, 0.3638 =  0.0079
-
-0.3717- 0.3638
-
-#Model 7, 0.3806 - Model 6, 0.3717 = 0.0089
-
- 0.3806 - 0.3717
 ```
 
 ## Hierarchical Linear Regressions, COVID DoG  w/o outliers
 
-### Identying outiers 
+### Identifing outliers: Do they make a difference and if so, where? 
 ```{r}
 
 #Model 1
 outlierTest(Model1)
 
-omit_df_m1_outliers <-omit_df[!(omit_df$id=="59" | omit_df$id=="156" | omit_df$id=="212" | omit_df$id=="26" |  omit_df$id=="262" |  omit_df$id=="44"  | omit_df$id=="132" | omit_df$id=="157" | omit_df$id=="10" | omit_df$id=="15" |omit_df$id=="109" | omit_df$id=="253" | omit_df$id=="51" | omit_df$id=="238" ),]
+#removing outliers
+
+omit_df_m1_outliers <-omit_df[!(omit_df$id=="59"| omit_df$id=="156" | omit_df$id=="212"),]
                                 
 
 Model1.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled, data =omit_df_m1_outliers)
 
-outlierTest(Model1.5)
 
 summary(Model1.5)
+
+#SDRS sig now
 
 #Model 2
 outlierTest(Model2)
 
-omit_df_m2_outliers <-omit_df[!(omit_df$id=="156" | omit_df$id=="212" | omit_df$id=="26" |  omit_df$id=="262" |  omit_df$id=="44"  | omit_df$id=="132" | omit_df$id=="157" | omit_df$id=="10" | omit_df$id=="15" |omit_df$id=="109" | omit_df$id=="253" | omit_df$id=="51" | omit_df$id=="238" | omit_df$id=="318" | omit_df$id=="59" | omit_df$id=="315" ),]
+omit_df_m2_outliers <-omit_df[!(omit_df$id=="253"),]
 
 
 Model2.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index, data =omit_df_m2_outliers)
 
-outlierTest(Model2.5)
 
 summary(Model2.5)
 
+#same results as non outlier model, SDRS no longer sig
+
 outlierTest(Model3)
+
+omit_df_m3_outliers <-omit_df[!(omit_df$id=="253"),]
+
+Model3.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index  + GCS_index, data =omit_df_m3_outliers)
+
+summary(Model3.5)
+
+#same results as non outlier model
 
 outlierTest(Model4)
 
+omit_df_m4_outliers <-omit_df[!(omit_df$id=="10"| omit_df$id=="109"| omit_df$id=="238"|omit_df$id=="253"),]
+
+Model4.5 <-lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index, data = omit_df_m4_outliers)
+
+summary(Model4.5)
+
+#same results as non outlier model, but now GCS index is sig. 
+
+
 outlierTest(Model5)
+
+omit_df_m5_outliers <-omit_df[!(omit_df$id=="10" |omit_df$id=="253"),]
+
+Model5.5 <- lm(logCOVID_DoG_index ~  SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation, data = omit_df_m5_outliers)
+
+
+summary(Model5.5)
+
+#same results as non outlier model, GCS index is not sig
+
 
 outlierTest(Model6)
 
+omit_df_m6_outliers <-omit_df[!(omit_df$id=="10"| omit_df$id=="238"|omit_df$id=="253"),]
+
+Model6.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index, data = omit_df_m6_outliers)
+
+summary(Model6.5)
+
+#same results as non outlier model, except fairness is now trending
+
 outlierTest(Model7)
 
+omit_df_m7_outliers <-omit_df[!(omit_df$id=="10" |omit_df$id=="253"),]
+
+Model7.5 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index + logMeanK, data = omit_df_m7_outliers)
+
+summary(Model7.5)
+
+#same results as non outlier model
+
 ```
 
-
-```{r}
-Model0 <- lm(logCOVID_DoG_index ~ 1, data = omit_df) #to obtain Total SS
-
-Model1 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled, data = omit_df)
-
-Model2 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index, data = omit_df)
-
-Model3 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index, data = omit_df)
-
-Model4 <-lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index, data = omit_df)
-
-Model5 <- lm(logCOVID_DoG_index ~  SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation, data = omit_df)
-
-Model6 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index, data = omit_df)
-
-Model7 <- lm(logCOVID_DoG_index ~ SDRS_Sum_scaled + Stress_index + Impacts_index +  GCS_index + Norms_index + harm_foundation + fairness_foundation + authority_foundation + ingroup_foundation + purity_foundation + Measure2_liberal_Index + Measure2_liberterian_Index + Measure2_cons_Index + logMeanK, data = omit_df)
-```
-
-##Comparing SS
-
-```{r}
-anova(Model0)
-
-#What is the SS of all the rest of the models?
-
-anova(Model1, Model2, Model3, Model4, Model5, Model6, Model7)
-
-#what do the individual models look like?
-
-summary(Model1)
-outlierTest(Model1)
-
-omit_df_m1_outliers <-omit_df[!(omit_df$id=="59" | omit_df$id=="156" | omit_df$id=="212" ),]
-                                
-# omit_df$id=="10" | omit_df$id=="15" | omit_df$id=="132" | omit_df$id=="262" | omit_df$id=="157" | omit_df$id=="44" | omit_df$id=="253" | omit_df$id=="26" | omit_df$id=="109" | omit_df$id=="51" | omit_df$id=="238"),]
-
-summary(Model2)
-outlierTest(Model2)
-
-summary(Model3)
-outlierTest(Model3)
-
-summary(Model4)
-outlierTest(Model4)
-
-summary(Model5)
-outlierTest(Model5)
-
-summary(Model6)
-outlierTest(Model6)
-
-summary(Model7)
-outlierTest(Model7)
-
-#what is the difference in r2?
-
-#Model 2,  0.07323 - Model 1, 0.003554 = 0.069676
-
-0.07323- 0.003554 
-
-#Model 3,  0.0734  - Model 2,  0.07323 = 0.2482
-
- 0.0734- 0.07323
-
-#Model 4, 0.2851 - Model 3, 0.0734 = 0.2117
-
-0.2851 - 0.0734
-
-#Model 5,0.3638- Model 4, -  0.2851 = 0.0375
-0.3638 -  0.2851
-
-#Model 6, 0.3717 - Model 5, 0.3638 =  0.0079
-
-0.3717- 0.3638
-
-#Model 7, 0.3806 - Model 6, 0.3717 = 0.0089
-
- 0.3806 
-   
-```
 
 
 ## Hierarchical Linear Regressions, MCQ
@@ -360,30 +307,23 @@ outlierTest(MCQModel2)
 
 #no outliers! 
 
-
-
-#what is the difference in r2?
-
-#Model 2,  0.018427 - Model 1,  0.006085	 = 0.012335
-
-0.01842 -  0.006085
-
-
 ```
 
 # Correlation Comparisons + general correlations for figures 
 
 ## GCS 
 ```{r}
-ggscatter(omit_df, x = "GCS_index", y = "logMeanK", 
+ggscatter(omit_df, x = "GCS_index", y = "logMeanK", title = "a)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,0), cor.method = "pearson",
           xlab = "Uncertainty", ylab = "Temporal Discounting")
-#DoG and Uncertainty
-ggscatter(omit_df, x = "GCS_index", y = "logCOVID_DoG_index", 
+
+
+ggscatter(omit_df, x = "GCS_index", y = "logCOVID_DoG_index", title = "b)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE,  cor.coef.coor = c(1,8), cor.method = "pearson",
           xlab = "Uncertainty ", ylab = "COVID-19 Delay of Gratification")
+
 
 #Fischer-Z Comparison
 paired.r(0.11, -0.022, NULL, 384)
@@ -391,14 +331,14 @@ paired.r(0.11, -0.022, NULL, 384)
 
 ## Norms
 ```{r}
-ggscatter(omit_df, x = "Norms_index", y = "logMeanK", 
+ggscatter(omit_df, x = "Norms_index", y = "logMeanK", title = "a)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE,  cor.coef.coor = c(1,0), cor.method = "pearson",
           xlab = "COVID-19 Social Norms", ylab = "Temporal Discounting")
 
-ggscatter(omit_df, x = "Norms_index", y = "logCOVID_DoG_index", 
+ggscatter(omit_df, x = "Norms_index", y = "logCOVID_DoG_index", title = "b)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE,  cor.coef.coor = c(1,9), cor.method = "pearson",
           xlab = "COVID-19 Social Norms", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
@@ -410,14 +350,14 @@ paired.r(0.078, -0.5, NULL, 384)
 ###Fairness 
 
 ```{r}
-ggscatter(omit_df, x = "fairness_foundation", y = "logMeanK", 
+ggscatter(omit_df, x = "fairness_foundation", y = "logMeanK", title = "a)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,0), cor.method = "pearson",
           xlab = "Fairness Foundation", ylab = "Temporal Discounting")
 
-ggscatter(omit_df, x = "fairness_foundation", y = "logCOVID_DoG_index", 
+ggscatter(omit_df, x = "fairness_foundation", y = "logCOVID_DoG_index",  title = "b)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,8), cor.method = "pearson",
           xlab = "Fairness Foundation", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
@@ -427,14 +367,14 @@ paired.r(0.000, .37, NULL, 384)
 
 ###Loyalty 
 ```{r}
-ggscatter(omit_df, x = "ingroup_foundation", y = "logMeanK", 
+ggscatter(omit_df, x = "ingroup_foundation", y = "logMeanK",  title = "a)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,0), cor.method = "pearson",
           xlab = "Loyalty Foundation", ylab = "Temporal Discounting")
 
-ggscatter(omit_df, x = "ingroup_foundation", y = "logCOVID_DoG_index", 
+ggscatter(omit_df, x = "ingroup_foundation", y = "logCOVID_DoG_index",  title = "b)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE,cor.coef.coor = c(1,9), cor.method = "pearson",
           xlab = "Loyalty Foundation", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
@@ -443,14 +383,14 @@ paired.r(0.097, -0.19, NULL, 383)
 
 ## Political Orientation, Cons 
 ```{r}
-ggscatter(omit_df, x = "Measure2_cons_Index", y = "logMeanK", 
+ggscatter(omit_df, x = "Measure2_cons_Index", y = "logMeanK", title = "a)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,0), cor.method = "pearson",
           xlab = "Conservative Political Orientation", ylab = "Temporal Discounting")
 
-ggscatter(omit_df, x = "Measure2_cons_Index", y = "logCOVID_DoG_index", 
+ggscatter(omit_df, x = "Measure2_cons_Index", y = "logCOVID_DoG_index", title = "b)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,9), cor.method = "pearson",
           xlab = "Conservative Political Orientation", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
@@ -460,20 +400,190 @@ paired.r(0.036, -.37, NULL, 384)
 
 ## Stress 
 ```{r}
-ggscatter(omit_df, x = "Stress_index", y = "logMeanK", 
+ggscatter(omit_df, x = "Stress_index", y = "logMeanK",  title = "a)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,0), cor.method = "pearson",
           xlab = "COVID-19 Stress", ylab = "Temporal Discounting")
 
-ggscatter(omit_df, x = "Stress_index", y = "logCOVID_DoG_index", 
+ggscatter(omit_df, x = "Stress_index", y = "logCOVID_DoG_index",  title = "b)",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.coef = TRUE, cor.coef.coor = c(1,9), cor.method = "pearson",
           xlab = "COVID-19 Stress", ylab = "COVID-19 Delay of Gratification")
 
 #Fischer-Z Comparison
 paired.r(0.15, 0.25, NULL, 384)
 
 ```
+
+#Correlation comparsions, no outliers
+
+
+#lets identify the outliers via outlierTest function and a simple regression
+
+## GCS 
+```{r}
+GCSModel1 <- lm(logMeanK ~ GCS_index, data = omit_df)
+summary(GCSModel1)
+
+outlierTest(GCSModel1)
+
+#no outliers
+
+GCSModel2 <- lm(logCOVID_DoG_index ~ GCS_index, data = omit_df)
+summary(GCSModel2)
+
+outlierTest(GCSModel2)
+#again no outliers
+
+```
+
+## Norms
+```{r}
+NormsModel1 <- lm(logMeanK ~ Norms_index, data = omit_df)
+summary(NormsModel1)
+
+NormsModel2 <- lm(logCOVID_DoG_index ~ Norms_index, data = omit_df)
+summary(NormsModel2)
+
+outlierTest(NormsModel1)
+
+outlierTest(NormsModel2)
+
+#there are outliers identified for NormsModel2: #10, 102, 230 243
+
+NormsModel2Outliers2 <-omit_df[!(omit_df$id=="10"| omit_df$id=="109"| omit_df$id=="238"|omit_df$id=="253"),]
+
+ggscatter(NormsModel2Outliers2, x = "Norms_index", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "COVID-19 Social Norms", ylab = "COVID-19 Delay of Gratification")
+
+#Fischer-Z Comparison
+paired.r(0.078, -0.55, NULL, 384, n2= 380)
+
+```
+
+## Moral Foundations
+###Fairness 
+
+```{r}
+
+#lets identify the outliers via CooksD and a simple regression
+
+Fairness1 <- lm(logMeanK ~ fairness_foundation, data = omit_df)
+summary(Fairness1)
+
+Fairness2 <- lm(logCOVID_DoG_index ~ fairness_foundation, data = omit_df)
+summary(Fairness2)
+
+outlierTest(Fairness1)
+
+outlierTest(Fairness2)
+
+#outliers were identified: 41, 56, 243 
+
+Fairness2Outliers2 <-omit_df[!(omit_df$id=="44"| omit_df$id=="59"|omit_df$id=="253"),]
+
+ggscatter(Fairness2Outliers2, x = "fairness_foundation", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Fairness Foundation", ylab = "COVID-19 Delay of Gratification")
+
+#Fischer-Z Comparison
+paired.r(0.000, 0.39, NULL, 384, n2= 381)
+
+```
+
+
+###Loyalty 
+```{r}
+
+Loyalty1 <- lm(logMeanK ~ ingroup_foundation, data = omit_df)
+summary(Loyalty1)
+
+Loyalty2 <- lm(logCOVID_DoG_index ~ ingroup_foundation, data = omit_df)
+summary(Loyalty2)
+
+outlierTest(Loyalty1)
+
+outlierTest(Loyalty2)
+
+#outliers were identified: 10, 14, 23, 56, 149, 204 
+
+Loyalty2Outliers2 <-omit_df[!(omit_df$id=="10"| omit_df$id=="15"|omit_df$id=="26" | omit_df$id=="59"| omit_df$id=="156"|omit_df$id=="212"),]
+
+ggscatter(Loyalty2Outliers2, x = "ingroup_foundation", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Loyalty Foundation", ylab = "COVID-19 Delay of Gratification")
+
+#Fischer-Z Comparison
+paired.r(0.097, -0.26, NULL, 384, n2=378)
+
+
+
+
+```
+
+## Political Orientation, Cons 
+```{r}
+
+Cons1 <- lm(logMeanK ~ Measure2_cons_Index, data = omit_df)
+summary(Cons1)
+
+Cons2 <- lm(logCOVID_DoG_index ~ Measure2_cons_Index, data = omit_df)
+summary(Cons2)
+
+outlierTest(Cons1)
+
+outlierTest(Cons2)
+
+#outliers were identified: 10, 149, 204, 243
+
+Cons2Outliers2 <-omit_df[!(omit_df$id=="10"| omit_df$id=="156"|omit_df$id=="212" | omit_df$id=="253"),]
+
+ggscatter(Cons2Outliers2, x = "Measure2_cons_Index", y = "logCOVID_DoG_index", 
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Conservative Political Orientation", ylab = "COVID-19 Delay of Gratification")
+
+#Fischer-Z Comparison
+paired.r(0.036, -.4, NULL, 384, n2 = 380)
+```
+
+
+## Stress 
+```{r}
+
+Stress1 <- lm(logMeanK ~ Stress_index, data = omit_df)
+summary(Stress1)
+
+Stress2 <- lm(logCOVID_DoG_index ~ Stress_index, data = omit_df)
+summary(Stress2)
+
+outlierTest(Stress1)
+
+outlierTest(Stress2)
+
+#outliers were identified:48, 243
+
+Stress2Outliers2 <-omit_df[!(omit_df$id=="51"|omit_df$id=="253"),]
+
+ggscatter(omit_df, x = "Stress_index", y = "logMeanK",  title = "a)",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coef.coor = c(1,0), cor.method = "pearson",
+          xlab = "COVID-19 Stress", ylab = "Temporal Discounting")
+
+ggscatter(Stress2Outliers2, x = "Stress_index", y = "logCOVID_DoG_index",title = "b)",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.coef.coor = c(1,8), cor.method = "pearson",
+          xlab = "COVID-19 Stress", ylab = "COVID-19 Delay of Gratification")
+
+#Fischer-Z Comparison
+paired.r(0.15, 0.3, NULL, 384, n2 =382)
+
+```
+
 
 # Misc Models
 ## Is age predictive of COVID DoG? 
