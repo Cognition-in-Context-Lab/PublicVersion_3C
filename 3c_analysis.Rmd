@@ -9,40 +9,24 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Packages
-library("ggpubr")
-library(psych)
+
+#install.packages("tidyverse")
 library(tidyverse)
-library(ggplot2)
-library(ggrepel)
-library(scales)
-library(vtable)
+
 #install.packages("vtable")
-#install.packages("Hmisc")
-#install.packages("lmtest")
-#install.packages("jtools")
-#install.packages("interactions")
-#install.packages("lm.beta")
-#install.packages("car")
-#install.packages("sandwich")
-#install.packages("ggrepel")
-#install.package
-#install.packages("pls")
-install.packages("EnvStats")
-library(sandwich)
-library(car)
-library(jtools)
-library(interactions)
-library(lm.beta)
-library(lmtest)
-library(Hmisc)
-library(dplyr)
-library(Metrics)
-library(pls)
+library(vtable)
+
+#install.packages("GGally")
 library(GGally)
-library(EnvStats)
-#library(plyr)
 
+#install.packages("car")
+library(car)
 
+#install.packages("ggpubr")
+library(ggpubr)
+
+#install.packages("psych")
+library(psych)
 ```
 # Analyses 
 
@@ -614,7 +598,7 @@ plot(AgeModel2)
 
 NormsModel1 <- lm(logCOVID_DoG_index ~ FamilyNorm_index + FriendsNorm_index + StrangerNorm_index, data = omit_df)
 
-summary(NormsModel)
+summary(NormsModel1)
 
 outlierTest(NormsModel1)
 

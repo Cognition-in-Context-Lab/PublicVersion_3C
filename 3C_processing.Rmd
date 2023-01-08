@@ -11,13 +11,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Packages
-library("ggpubr")
-library(psych)
+#install.packages("tidyverse")
 library(tidyverse)
+
+#install.packages("scales")
 library(scales)
-library(jtools)
-library(Hmisc)
-library(dplyr)
+
+#install.packages("psych")
+library(psych)
 ```
 
 # Processing
@@ -404,9 +405,9 @@ omit_df <- omit_df %>%
 
 #what are the cons scores looking like?
 
-histogram(omit_df$SmlCons)
-histogram(omit_df$MedCons)
-histogram(omit_df$LrgCons)
+hist(omit_df$SmlCons)
+hist(omit_df$MedCons)
+hist(omit_df$LrgCons)
 
 #Let's remove any of the values that are below .80 cons score across the values
 
@@ -722,6 +723,7 @@ mini_df <- omit_df %>% select(SDRS.5_Q1:SDRS.5_Q5)
 omit_df <- omit_df %>% mutate(SDRS_Sum = rowSums(mini_df), 
                               .before = Worries_1)
 SDRS_Sum_scaled <- rescale(omit_df$SDRS_Sum, from = c(5, 25), to = c(20, 100))
+
 omit_df <- omit_df %>% mutate(SDRS_Sum_scaled, 
                               .before = SDRS_Sum)
 
@@ -779,7 +781,7 @@ psych::alpha(Norm_DF)
 
 ```
 
-## SD (ned to add in reverse code )
+## SD (need to add in reverse code )
 ```{r}
 #create SD Subset 
 
